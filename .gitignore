@@ -1,0 +1,10 @@
+node_modules/
+.next/
+next-env.d.ts
+*.tsbuildinfo
+# Segredos: nunca versionar
+.env
+.env.*
+!.env.example
+# Pasta criada pelo app Claude
+Claude outputs/
