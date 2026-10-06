@@ -23,6 +23,11 @@ const EnvSchema = z
 		SESSION_PEPPER: base64Bytes32,
 		RECOVERY_PEPPER: base64Bytes32,
 		AUTH_MAC_KEY: base64Bytes32,
+		// Chave da API do Resend (segredo). O prefixo "re_" só barra o erro comum de colar a variável errada.
+		RESEND_API_KEY: z.string().startsWith("re_").min(8),
+		// Endereço remetente (só o e-mail; o nome de exibição fica por conta do adapter de e-mail).
+		// O domínio precisa estar verificado no Resend (SPF/DKIM).
+		MAIL_FROM: z.email(),
 	})
 	.superRefine((env, ctx) => {
 		// As chaves precisam ser todas diferentes: se duas forem iguais, a

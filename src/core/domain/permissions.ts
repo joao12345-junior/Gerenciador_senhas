@@ -2,7 +2,10 @@
 
 import { ROLES, type Role } from "./role";
 
-/** Ações controladas pelo sistema. Formato `recurso:verbo`; `-own` = só o que é do próprio ator. */
+/**
+ * Ações controladas pelo sistema. Formato `recurso:verbo`; `-own` = só o que é do próprio ator.
+ * Ação nova só chega ao admin até ser mapeada em um papel (o admin usa esta lista inteira).
+ */
 export const ACTIONS = [
 	"credential:list",
 	"credential:reveal",
@@ -12,9 +15,12 @@ export const ACTIONS = [
 	"credential:create-own",
 	"credential:update-own",
 	"credential:delete-own",
-	"platform:manage",
+	"group:manage",
 	"user:manage",
 	"audit:list",
+	"rotation:list",
+	"discipline:manage",
+	"user:restore",
 ] as const;
 
 export type Action = (typeof ACTIONS)[number];
@@ -28,15 +34,19 @@ const BASE_ACTIONS: readonly Action[] = [
 	"credential:delete-own",
 ];
 
-// Coordenação = base + gestão geral (tudo, menos auditoria)
+// Coordenação = base + gestão geral. Fica de fora o que é só do admin:
+// auditoria (audit:list), disciplinas (discipline:manage) e restauração de usuário (user:restore)
 const COORDINATION_ACTIONS: readonly Action[] = [
 	...BASE_ACTIONS,
 	"credential:create",
 	"credential:update",
 	"credential:delete",
-	"platform:manage",
+	"group:manage",
 	"user:manage",
+	"rotation:list",
 ];
+
+const CHEF_ACTIONS: readonly Action[] = [...COORDINATION_ACTIONS];
 
 /**
  * Mapa papel → ações. `Record<Role, ...>` obriga todo papel a aparecer:
@@ -47,11 +57,17 @@ const PERMISSIONS: Record<Role, ReadonlySet<Action>> = {
 	coordenacao: new Set(COORDINATION_ACTIONS),
 	// Chefe ("Dono" na tela): mesmas ações da coordenação; a diferença (todas as disciplinas)
 	// é regra de visibilidade, tratada em credential-access, não aqui
-	chefe: new Set(COORDINATION_ACTIONS),
+	chefe: new Set(CHEF_ACTIONS),
 	admin: new Set(ACTIONS), // admin tem tudo, inclusive ações futuras
 };
 
-/** Diz se o papel tem a ação. Regras que dependem do alvo (dono, papel da conta) ficam nos casos de uso. */
+/**
+ * Diz se o papel tem a ação.
+ * Regras que dependem do alvo (dono, papel da conta) ficam nos casos de uso.
+ * @param role Papel do ator.
+ * @param action Ação que ele quer executar.
+ * @returns `true` se o papel tem a ação.
+ */
 export function can(role: Role, action: Action): boolean {
 	return PERMISSIONS[role].has(action);
 }
@@ -70,5 +86,8 @@ const MANAGEABLE_TARGETS: Record<Role, ReadonlySet<Role>> = {
  * Admin gerencia todas; coordenação e chefe só usuario e coordenacao; usuário ninguém.
  */
 export function canManageUser(actorRole: Role, targetRole: Role): boolean {
-	return can(actorRole, "user:manage") && MANAGEABLE_TARGETS[actorRole].has(targetRole);
+	return (
+		can(actorRole, "user:manage") &&
+		MANAGEABLE_TARGETS[actorRole].has(targetRole)
+	);
 }

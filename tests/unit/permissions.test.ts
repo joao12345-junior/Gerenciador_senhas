@@ -1,6 +1,17 @@
 import { describe, expect, it } from "vitest";
-import { ACTIONS, can, canManageUser } from "../../src/core/domain/permissions";
+import {
+	ACTIONS,
+	can,
+	canManageUser,
+	type Action,
+} from "../../src/core/domain/permissions";
 import { ROLES, type Role } from "../../src/core/domain/role";
+
+const ADMIN_ONLY: readonly Action[] = [
+	"audit:list",
+	"discipline:manage",
+	"user:restore",
+];
 
 describe("can", () => {
 	it("admin tem todas as ações", () => {
@@ -10,10 +21,25 @@ describe("can", () => {
 	});
 
 	// Chefe ("Dono") tem as mesmas ações da coordenação
-	it.each(["coordenacao", "chefe"] as const)("%s tem tudo, menos auditoria", (role) => {
-		for (const action of ACTIONS) {
-			expect(can(role, action)).toBe(action !== "audit:list");
-		}
+	it.each(["coordenacao", "chefe"] as const)(
+		"%s tem tudo, menos as ações só do admin",
+		(role) => {
+			for (const action of ACTIONS) {
+				expect(can(role, action)).toBe(!ADMIN_ONLY.includes(action));
+			}
+		},
+	);
+
+	it.each(ADMIN_ONLY)("só admin tem %s", (action) => {
+		expect(ROLES.filter((role) => can(role, action))).toEqual(["admin"]);
+	});
+
+	it("só coordenação, chefe e admin listam rotações", () => {
+		expect(ROLES.filter((role) => can(role, "rotation:list"))).toEqual([
+			"coordenacao",
+			"chefe",
+			"admin",
+		]);
 	});
 
 	it("usuário só tem listar, revelar e mexer nas próprias credenciais", () => {
@@ -27,11 +53,6 @@ describe("can", () => {
 		for (const action of ACTIONS) {
 			expect(can("usuario", action)).toBe(allowed.includes(action));
 		}
-	});
-
-	it("só admin vê a auditoria", () => {
-		const roles = ROLES.filter((role) => can(role, "audit:list"));
-		expect(roles).toEqual(["admin"]);
 	});
 });
 

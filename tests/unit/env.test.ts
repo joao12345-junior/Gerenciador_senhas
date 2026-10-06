@@ -13,6 +13,8 @@ const VALID = {
 	SESSION_PEPPER: key(2),
 	RECOVERY_PEPPER: key(3),
 	AUTH_MAC_KEY: key(4),
+	RESEND_API_KEY: "re_teste_123",
+	MAIL_FROM: "cofre@optare.com.br",
 };
 
 /** Executa `fn` e devolve a mensagem do erro lançado ("" se não lançar). */
@@ -51,7 +53,9 @@ describe("parseEnv", () => {
 
 	it("recusa chaves repetidas e diz com qual ela se repete", () => {
 		const repetida = { ...VALID, AUTH_MAC_KEY: VALID.SESSION_PEPPER };
-		expect(() => parseEnv(repetida)).toThrow(/AUTH_MAC_KEY: igual a SESSION_PEPPER/);
+		expect(() => parseEnv(repetida)).toThrow(
+			/AUTH_MAC_KEY: igual a SESSION_PEPPER/,
+		);
 	});
 
 	it("recusa a mesma chave escrita com texto diferente (mesmos bytes)", () => {
@@ -85,7 +89,7 @@ describe("parseEnv", () => {
 		expect(parseEnv(VALID).LOGDASH_DB_SSL).toBe(false);
 	});
 
-	it('LOGDASH_DB_SSL "true" vira true', () => {
+	it("LOGDASH_DB_SSL 'true' vira true", () => {
 		expect(parseEnv({ ...VALID, LOGDASH_DB_SSL: "true" }).LOGDASH_DB_SSL).toBe(
 			true,
 		);
@@ -95,5 +99,37 @@ describe("parseEnv", () => {
 		expect(() => parseEnv({ ...VALID, LOGDASH_DB_SSL: "talvez" })).toThrow(
 			/LOGDASH_DB_SSL/,
 		);
+	});
+
+	it("recusa RESEND_API_KEY ausente", () => {
+		const { RESEND_API_KEY: _removida, ...semChave } = VALID;
+		expect(() => parseEnv(semChave)).toThrow(/RESEND_API_KEY/);
+	});
+
+	it("recusa RESEND_API_KEY sem o prefixo 're_'", () => {
+		expect(() => parseEnv({ ...VALID, RESEND_API_KEY: "sem_prefixo" })).toThrow(
+			/RESEND_API_KEY/,
+		);
+	});
+
+	it("recusa MAIL_FROM ausente", () => {
+		const { MAIL_FROM: _removida, ...semRemetente } = VALID;
+		expect(() => parseEnv(semRemetente)).toThrow(/MAIL_FROM/);
+	});
+
+	it("recusa MAIL_FROM que não é e-mail", () => {
+		expect(() => parseEnv({ ...VALID, MAIL_FROM: "email" })).toThrow(
+			/MAIL_FROM/,
+		);
+	});
+
+	it("o erro de uma RESEND_API_KEY inválida não contém o valor dela", () => {
+		const segredo = "segredo-sem-prefixo";
+		const message = errorMessage(() =>
+			parseEnv({ ...VALID, RESEND_API_KEY: segredo }),
+		);
+
+		expect(message).toContain("RESEND_API_KEY"); // sem isto o teste passa vazio, sem erro nenhum
+		expect(message).not.toContain(segredo);
 	});
 });
