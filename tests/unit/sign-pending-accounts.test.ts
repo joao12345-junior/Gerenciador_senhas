@@ -30,8 +30,42 @@ describe("signPendingAccounts", () => {
 		expect(chamado).toBe(false);
 		expect(signing.signCalls).toHaveLength(0);
 	});
-	it("confirm recebe exatamente a lista de listUnsigned", async () => {});
-	it.todo("confirm devolve false: não chama sign");
-	it.todo("confirm devolve true: chama sign com os ids, na ordem");
-	it.todo("devolve o número que o sign devolveu, mesmo menor que listed");
+	it("confirm recebe exatamente a lista de listUnsigned", async () => {
+		const contas = [account(1), account(2)];
+		const signing = new FakeAccountSigning(contas);
+		let recebidas: readonly UnsignedAccount[] = [];
+
+		await signPendingAccounts(signing, async (lista) => {
+			recebidas = lista;
+			return false;
+		});
+
+		expect(recebidas).toEqual(contas);
+	});
+	it("confirm devolve false: não chama sign", async () => {
+		const contas = [account(1), account(2)];
+		const signing = new FakeAccountSigning(contas);
+
+		const result = await signPendingAccounts(signing, async () => {
+			return false;
+		});
+
+		expect(result).toEqual({ listed: 2, signed: 0 });
+		expect(signing.signCalls).toHaveLength(0);
+	});
+	it("confirm devolve true: chama sign com os ids, na ordem", async () => {
+		const signing = new FakeAccountSigning([account(3), account(5)]);
+
+		const result = await signPendingAccounts(signing, async () => true);
+
+		expect(signing.signCalls).toEqual([[3, 5]]);
+		expect(result).toEqual({ listed: 2, signed: 2 });
+	});
+	it("devolve o número que o sign devolveu, mesmo menor que listed", async () => {
+		const signing = new FakeAccountSigning([account(1), account(2)], 1);
+
+		const result = await signPendingAccounts(signing, async () => true);
+
+		expect(result).toEqual({ listed: 2, signed: 1 });
+	});
 });
