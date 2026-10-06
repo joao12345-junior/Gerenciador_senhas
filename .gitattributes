@@ -1,0 +1,3 @@
+# Migrations: fim de linha fixo em LF em qualquer máquina (o migrate.ts também ignora
+# LF/CRLF ao conferir o checksum, ver scripts/migration-checksum.ts).
+db/migrations/*.sql text eol=lf

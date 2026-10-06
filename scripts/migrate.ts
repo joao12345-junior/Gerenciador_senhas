@@ -1,7 +1,7 @@
-import { createHash } from "node:crypto";
 import { readdir, readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { Client } from "pg";
+import { canonicalChecksum, matchesStoredChecksum } from "./migration-checksum";
 
 /** Pasta com os arquivos .sql, relativa a este script. */
 const MIGRATIONS_DIR = fileURLToPath(new URL("../db/migrations", import.meta.url));
@@ -12,10 +12,6 @@ const ADVISORY_LOCK_ID = 727_001;
 interface AppliedMigration {
 	readonly name: string;
 	readonly checksum: string;
-}
-
-function sha256(text: string): string {
-	return createHash("sha256").update(text).digest("hex");
 }
 
 async function main(): Promise<void> {
@@ -47,12 +43,12 @@ async function main(): Promise<void> {
 
 		for (const file of files) {
 			const sql = await readFile(`${MIGRATIONS_DIR}/${file}`, "utf8");
-			const checksum = sha256(sql);
 			const previous = applied.get(file);
 
 			if (previous !== undefined) {
 				// Migration já aplicada não pode ser editada: crie uma nova (005_...) em vez disso
-				if (previous !== checksum) {
+				// Compara ignorando só LF/CRLF (ver migration-checksum.ts); mudança de conteúdo continua barrada
+				if (!matchesStoredChecksum(sql, previous)) {
 					throw new Error(`${file} foi alterada depois de aplicada. Crie uma nova migration.`);
 				}
 				console.log(`= ${file} (já aplicada)`);
@@ -65,7 +61,7 @@ async function main(): Promise<void> {
 				await client.query(sql);
 				await client.query("INSERT INTO schema_migrations (name, checksum) VALUES ($1, $2)", [
 					file,
-					checksum,
+					canonicalChecksum(sql),
 				]);
 				await client.query("COMMIT");
 				console.log(`+ ${file} aplicada`);
