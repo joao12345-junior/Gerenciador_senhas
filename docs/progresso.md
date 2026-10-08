@@ -27,7 +27,7 @@ Fonte do `npm run progress`. Regras do formato (o script lê isto):
 - [x] Domínio e portas de grupo e subgrupo
 - [x] `PostgresGroupRepository` + `group-row` (53 integração, 17 mutações)
 - [x] `PostgresSubgroupRepository` + `subgroup-row` (77 integração)
-- [ ] Mutações do subgrupo (`mutate-subgroup-repository.mjs`)
+- [x] Mutações do subgrupo (27 de 27 mortas, `mutate-subgroup-repository.mjs`)
 - [ ] Disciplina: entidade + porta
 - [ ] `PostgresDisciplineRepository`
 - [ ] `RotationFlagRepository` (porta + adaptador)
