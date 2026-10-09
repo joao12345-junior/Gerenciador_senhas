@@ -1,12 +1,14 @@
 # Cofre Optare — Checklist de progresso
 
 Fonte do `npm run progress`. Regras do formato (o script lê isto):
+
 - Cada bloco é um título `## Nome (peso N)`. A soma dos pesos deve dar 100.
 - Cada entregável é uma linha `- [ ]` ou `- [x]`. Marque `[x]` só quando estiver
   verde nos testes e commitado.
 - Item grande demais? Quebre em itens menores: o percentual fica mais honesto.
 
 ## Fundação (peso 15)
+
 - [x] Migrations 001–012 aplicadas no optare4
 - [x] `env.ts` com validação (zod)
 - [x] `migrate.ts` com checksum canônico e `.gitattributes`
@@ -20,6 +22,7 @@ Fonte do `npm run progress`. Regras do formato (o script lê isto):
 - [x] `AccountSigning` + script `sign-users`
 
 ## Domínio e repositórios (peso 20)
+
 - [x] `permissions` e `private-access`
 - [x] `discipline`, `discipline-access`, `credential-access`
 - [x] `rotation-flag` (domínio)
@@ -33,13 +36,15 @@ Fonte do `npm run progress`. Regras do formato (o script lê isto):
 - [ ] `RotationFlagRepository` (porta + adaptador)
 - [ ] Credencial: entidade + porta + `credential-row`
 - [ ] `PostgresCredentialRepository` (com cifra)
-- [ ] Sessão: porta + adaptador
+- [x] Migration 013 (`session.last_seen_at`) aplicada
+- [ ] Sessão: porta + adaptador (idle 30 min, teto 8 h)
 - [ ] Códigos de recuperação: porta + adaptador
 - [ ] Auditoria: porta + adaptador banco + LogDash
 - [ ] Envio de e-mail (Resend): porta + adaptador
 - [ ] Aceite de política (migration 011): porta + adaptador
 
 ## Casos de uso (peso 25)
+
 - [x] `signPendingAccounts`
 - [ ] Montar `ActorContext` (usuário + disciplinas)
 - [ ] Login (senha + falha genérica + `AuthIntegrityError`)
@@ -48,6 +53,7 @@ Fonte do `npm run progress`. Regras do formato (o script lê isto):
 - [ ] Logout / encerrar sessão
 - [ ] Recuperação com código
 - [ ] Trocar senha
+- [ ] Desbloquear conta (admin) após 3 erros
 - [ ] Listar grupos e subgrupos visíveis ao usuário
 - [ ] Listar credenciais de um subgrupo
 - [ ] Revelar credencial (com motivo para Privada da coordenação)
@@ -63,6 +69,7 @@ Fonte do `npm run progress`. Regras do formato (o script lê isto):
 - [ ] Aceite da política de conteúdo
 
 ## Telas (peso 30)
+
 - [ ] Layout base + navegação
 - [ ] Login
 - [ ] MFA
@@ -82,12 +89,14 @@ Fonte do `npm run progress`. Regras do formato (o script lê isto):
 - [ ] Responsivo (mobile)
 
 ## Deploy e endurecimento (peso 10)
+
 - [ ] Cookies de sessão seguros + `proxy.ts` protegendo rotas
 - [ ] Limite de tentativas de login
 - [ ] Cabeçalhos de segurança (CSP etc.)
 - [ ] Variáveis na Vercel conferidas (`AUTH_MAC_KEY` igual ao `.env`)
 - [ ] Rota `api/credentials/[id]/reveal`
 - [ ] Testes ponta a ponta do fluxo principal
+- [ ] Script `unlock-user` (desbloqueio de emergência do admin)
 - [ ] Primeiro `sign-users --apply` com contas reais
 - [ ] Revisão de segurança final
 - [ ] Runbook (backup, rotação de chaves)
