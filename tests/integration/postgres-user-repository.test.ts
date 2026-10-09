@@ -306,6 +306,92 @@ describe("PostgresUserRepository", () => {
 			);
 			expect((await repo.findAuthById(user.id))?.failedLoginAttempts).toBe(5);
 		});
+
+
+		it("devolve o total de tentativas depois do incremento", async () => {
+			const user = await repo.create(NEW_USER);
+
+			expect(await repo.registerFailedLogin(user.id, null)).toBe(1);
+			expect(await repo.registerFailedLogin(user.id, null)).toBe(2);
+			expect(await repo.registerFailedLogin(user.id, null)).toBe(3);
+		});
+
+		it("chamadas simultâneas recebem totais distintos (nenhuma lê o mesmo valor)", async () => {
+			const user = await repo.create(NEW_USER);
+
+			const totals = await Promise.all(
+				[1, 2, 3, 4, 5].map(() => repo.registerFailedLogin(user.id, null)),
+			);
+
+			expect([...totals].sort((a, b) => a - b)).toEqual([1, 2, 3, 4, 5]);
+		});
+
+		it("rejeita quando o usuário não existe, citando o id", async () => {
+			await expect(repo.registerFailedLogin(999, null)).rejects.toThrow("999");
+		});
+	});
+
+	describe("refundLoginAttempt", () => {
+		it("diminui o contador em um", async () => {
+			const user = await repo.create(NEW_USER);
+			await repo.registerFailedLogin(user.id, null);
+			await repo.registerFailedLogin(user.id, null);
+
+			await repo.refundLoginAttempt(user.id);
+
+			expect(await repo.findAuthById(user.id)).toMatchObject({
+				failedLoginAttempts: 1,
+			});
+		});
+
+		it("desfaz exatamente a reserva: reservar e devolver deixa o contador como estava", async () => {
+			const user = await repo.create(NEW_USER);
+			await repo.registerFailedLogin(user.id, null);
+
+			await repo.registerFailedLogin(user.id, null);
+			await repo.refundLoginAttempt(user.id);
+
+			expect(await repo.findAuthById(user.id)).toMatchObject({
+				failedLoginAttempts: 1,
+			});
+		});
+
+		it("não fica abaixo de zero", async () => {
+			const user = await repo.create(NEW_USER);
+
+			await repo.refundLoginAttempt(user.id);
+			await repo.refundLoginAttempt(user.id);
+
+			expect(await repo.findAuthById(user.id)).toMatchObject({
+				failedLoginAttempts: 0,
+			});
+		});
+
+		it("não mexe no bloqueio por data", async () => {
+			const user = await repo.create(NEW_USER);
+			const until = new Date("2030-01-01T00:00:00Z");
+			await repo.registerFailedLogin(user.id, until);
+
+			await repo.refundLoginAttempt(user.id);
+
+			expect((await repo.findAuthById(user.id))?.lockedUntil).toEqual(until);
+		});
+
+		it("só altera o usuário informado", async () => {
+			const ana = await repo.create(NEW_USER);
+			const bia = await repo.create({ ...NEW_USER, email: "bia@optare.com.br" });
+			await repo.registerFailedLogin(ana.id, null);
+			await repo.registerFailedLogin(bia.id, null);
+
+			await repo.refundLoginAttempt(ana.id);
+
+			expect(await repo.findAuthById(ana.id)).toMatchObject({ failedLoginAttempts: 0 });
+			expect(await repo.findAuthById(bia.id)).toMatchObject({ failedLoginAttempts: 1 });
+		});
+
+		it("usuário inexistente não lança", async () => {
+			await expect(repo.refundLoginAttempt(999)).resolves.toBeUndefined();
+		});
 	});
 
 	describe("resetFailedLogins", () => {

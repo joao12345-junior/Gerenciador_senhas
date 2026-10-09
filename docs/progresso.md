@@ -30,14 +30,16 @@ Fonte do `npm run progress`. Regras do formato (o script lê isto):
 - [x] Domínio e portas de grupo e subgrupo
 - [x] `PostgresGroupRepository` + `group-row` (53 integração, 17 mutações)
 - [x] `PostgresSubgroupRepository` + `subgroup-row` (77 integração)
-- [x] Mutações do subgrupo (27 de 27 mortas, `mutate-subgroup-repository.mjs`)
+- [x] Mutações do subgrupo (27 de 27 mortas, `npm run mutate -- subgroup`)
 - [ ] Disciplina: entidade + porta
 - [ ] `PostgresDisciplineRepository`
 - [ ] `RotationFlagRepository` (porta + adaptador)
 - [ ] Credencial: entidade + porta + `credential-row`
 - [ ] `PostgresCredentialRepository` (com cifra)
 - [x] Migration 013 (`session.last_seen_at`) aplicada
-- [ ] Sessão: porta + adaptador (idle 30 min, teto 8 h)
+- [x] Sessão: porta + adaptador (idle 30 min, teto 8 h)
+- [x] Mutações da sessão (25 de 25 mortas) + runner unificado `npm run mutate`
+- [x] Política de bloqueio (`lockout-policy`) + `registerFailedLogin` / `refundLoginAttempt` (36 testes de integração)
 - [ ] Códigos de recuperação: porta + adaptador
 - [ ] Auditoria: porta + adaptador banco + LogDash
 - [ ] Envio de e-mail (Resend): porta + adaptador
@@ -47,7 +49,8 @@ Fonte do `npm run progress`. Regras do formato (o script lê isto):
 
 - [x] `signPendingAccounts`
 - [ ] Montar `ActorContext` (usuário + disciplinas)
-- [ ] Login (senha + falha genérica + `AuthIntegrityError`)
+- [x] Login (senha + falha genérica + `AuthIntegrityError`) — 29 testes de unidade
+- [x] Mutações do login (39 de 39 mortas no sandbox; rodar `npm run mutate -- login` na sua máquina)
 - [ ] Verificar MFA
 - [ ] Setup de 2FA
 - [ ] Logout / encerrar sessão

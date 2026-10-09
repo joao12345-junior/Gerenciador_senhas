@@ -17,6 +17,7 @@ export interface UserRepository {
 	/** Anti-replay: true só se o step for MAIOR que o último usado. */
 	advanceTotpStep(id: number, step: number): Promise<boolean>;
 
-	registerFailedLogin(id: number, lockUntil: Date | null): Promise<void>;
+	registerFailedLogin(id: number, lockUntil: Date | null): Promise<number>;
+	refundLoginAttempt(id: number): Promise<void>;
 	resetFailedLogins(id: number): Promise<void>;
 }

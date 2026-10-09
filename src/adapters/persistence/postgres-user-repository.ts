@@ -121,10 +121,25 @@ export class PostgresUserRepository implements UserRepository {
 		return result.rowCount === 1;
 	}
 
-	async registerFailedLogin(id: number, lockUntil: Date | null): Promise<void> {
-		await this.pool.query(
-			`UPDATE app_user SET failed_attempts = failed_attempts + 1, locked_until = COALESCE($1, locked_until) WHERE id = $2`,
+	async registerFailedLogin(
+		id: number,
+		lockUntil: Date | null,
+	): Promise<number> {
+		const { rows } = await this.pool.query<{ failed_attempts: number }>(
+			`UPDATE app_user SET failed_attempts = failed_attempts + 1,
+			locked_until = COALESCE($1, locked_until)
+	 		WHERE id = $2 RETURNING failed_attempts`,
 			[lockUntil, id],
+		);
+		const row = rows[0];
+		if (row === undefined) throw new Error("Usuário não encontrado: " + id);
+		return row.failed_attempts;
+	}
+
+	async refundLoginAttempt(id: number): Promise<void> {
+		await this.pool.query(
+			`UPDATE app_user SET failed_attempts = GREATEST(failed_attempts - 1, 0) WHERE id = $1`,
+			[id],
 		);
 	}
 
